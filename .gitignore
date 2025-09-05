@@ -54,3 +54,6 @@ htmlcov/
 .vscode/
 .idea/
 *.swp
+
+# --- Files Generated During Runtime ---
+uploads
