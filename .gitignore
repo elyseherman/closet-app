@@ -1,0 +1,56 @@
+# --- General ---
+*.log
+*.env
+.DS_Store
+node_modules/
+__pycache__/
+*.pyc
+
+# --- React Native / Node ---
+# Dependency directories
+/frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.expo/
+.expo-shared/
+dist/
+build/
+
+# Metro / Expo
+.expo/
+.expo-shared/
+*.packager
+*.hprof
+
+# Android
+/android/
+*.apk
+*.aar
+*.ap_
+
+# iOS
+/ios/
+*.xcworkspace
+*.xcuserdata
+*.xcuserstate
+*.xcuserdatad
+*.xcodeproj
+DerivedData/
+
+# --- Python / FastAPI ---
+/backend/venv/
+*.egg-info/
+.env
+.env.*
+*.sqlite3
+instance/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.swp

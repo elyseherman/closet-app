@@ -6,7 +6,15 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
+import { useEffect, useState } from 'react';
+
 export default function HomeScreen() {
+
+  const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/").then((res) => res.json()).then((data : any) => setMessage(data.message)).catch((err) => console.log(err))
+  })
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -17,7 +25,7 @@ export default function HomeScreen() {
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
+        <ThemedText type="title">{message}</ThemedText>
         <HelloWave />
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
