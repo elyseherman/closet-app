@@ -22,8 +22,13 @@ export default function Upload() {
     // If not cancelled, store the URI
     if (!result.canceled && result.assets.length > 0) {
   const uri = result.assets[0].uri;
-  setImageUri(uri);
-  uploadImage(uri)
+  console.log(`TEST URI: ${uri}`)
+  const processedUri = await uploadImage(uri)
+  if (processedUri) {
+    console.log(processedUri)
+setImageUri(`${processedUri}`);
+
+  }
 }
 
   };
@@ -33,7 +38,7 @@ export default function Upload() {
 
   formData.append("file", {
     uri,
-    name: "photo.jpg",
+    name: "test.jpg",
     type: "image/jpeg",
   } as any);
 
@@ -45,6 +50,7 @@ export default function Upload() {
 
     const data = await response.json();
     console.log("Upload success:", data);
+    return data.url;
   } catch (error) {
     console.error("Upload error:", error);
   }
