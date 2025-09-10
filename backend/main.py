@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, Depends
+from fastapi import FastAPI, File, UploadFile, Depends, Query
 from fastapi.staticfiles import StaticFiles
 import os, shutil
 import requests
@@ -63,6 +63,7 @@ def analyze_item_with_openai(file_path: str):
                             "fit, material, texture, color (base + secondary), pattern, formality, season, "
                             "weather_suitability, occasion, gender_fit. "
                             "Fill missing fields with 'unknown'."
+                            "`category` should be one of the following: `tops`, `bottoms`, `dresses`, `shoes`, `accessories`"
                         )
                     },
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}},
@@ -165,3 +166,28 @@ async def upload_file(file: UploadFile=File(...), db: Session = Depends(get_db))
         return clothing_item.__dict__
     else:
         return {"error": response.text}
+
+@app.get("/closet/")
+def get_closet(
+    category: str | None = Query(None),
+    subcategory: str | None = Query(None),
+    color: str | None = Query(None),
+    formality: str | None = Query(None),
+    season: str | None = Query(None),
+    db: Session = Depends(get_db)
+):
+    query = db.query(models.ClothingItem)
+
+    if category:
+        query = query.filter(models.ClothingItem.category == category)
+    if subcategory:
+        query = query.filter(models.ClothingItem.subcategory == subcategory)
+    if color:
+        query = query.filter(models.ClothingItem.color_base == color)
+    if formality:
+        query = query.filter(models.ClothingItem.formality == formality)
+    if season:
+        # match if season string contains the requested season
+        query = query.filter(models.ClothingItem.season.contains(season))
+
+    return query.all()
