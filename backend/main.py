@@ -35,7 +35,7 @@ def get_db():
         db.close()
 
 def analyze_item_with_openai(file_path: str):
-    """Send image to OpenAI for category + color classification."""
+    """Send image to OpenAI for full clothing item analysis with labels."""
     with open(file_path, "rb") as f:
         img_bytes = f.read()
     b64_img = base64.b64encode(img_bytes).decode("utf-8")
@@ -45,12 +45,26 @@ def analyze_item_with_openai(file_path: str):
         messages=[
             {
                 "role": "system",
-                "content": "You are a fashion AI. Return clothing category and color."
+                "content": (
+                    "You are a fashion AI. Analyze the clothing item in the image "
+                    "and return metadata in JSON. If you are unsure of a field, use 'unknown'."
+                )
             },
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "Identify clothing category and color. Respond in JSON with keys `category` and `color`."},
+                    {
+                        "type": "text",
+                        "text": (
+                            "Identify the clothing item's metadata. "
+                            "Respond in JSON with the following keys: "
+                            "`category`, `subcategory`, `color_base`, `formality`, `season`, `labels_json`. "
+                            "`labels_json` should be a nested JSON object with full details including "
+                            "fit, material, texture, color (base + secondary), pattern, formality, season, "
+                            "weather_suitability, occasion, gender_fit. "
+                            "Fill missing fields with 'unknown'."
+                        )
+                    },
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}},
                 ],
             }
@@ -63,9 +77,43 @@ def analyze_item_with_openai(file_path: str):
                     "type": "object",
                     "properties": {
                         "category": {"type": "string"},
-                        "color": {"type": "string"},
+                        "subcategory": {"type": "string"},
+                        "color_base": {"type": "string"},
+                        "formality": {"type": "string"},
+                        "season": {"type": "string"},
+                        "labels_json": {
+                            "type": "object",
+                            "properties": {
+                                "category": {"type": "string"},
+                                "subcategory": {"type": "string"},
+                                "fit": {
+                                    "type": "object",
+                                    "properties": {
+                                        "cut": {"type": "string"},
+                                        "neckline": {"type": "string"},
+                                        "sleeve_length": {"type": "string"}
+                                    }
+                                },
+                                "material": {"type": "string"},
+                                "texture": {"type": "string"},
+                                "color": {
+                                    "type": "object",
+                                    "properties": {
+                                        "base": {"type": "string"},
+                                        "secondary": {"type": "array", "items": {"type": "string"}}
+                                    }
+                                },
+                                "pattern": {"type": "string"},
+                                "formality": {"type": "string"},
+                                "season": {"type": "array", "items": {"type": "string"}},
+                                "weather_suitability": {"type": "array", "items": {"type": "string"}},
+                                "occasion": {"type": "array", "items": {"type": "string"}},
+                                "gender_fit": {"type": "string"}
+                            },
+                            "required": ["category", "subcategory", "color", "formality", "season"]
+                        }
                     },
-                    "required": ["category", "color"],
+                    "required": ["category", "color_base", "formality", "season", "labels_json"],
                 },
             },
         }
@@ -73,6 +121,7 @@ def analyze_item_with_openai(file_path: str):
 
     result_text = response.choices[0].message.content
     return json.loads(result_text)
+
 
 @app.post('/upload')
 async def upload_file(file: UploadFile=File(...), db: Session = Depends(get_db)):
@@ -103,7 +152,11 @@ async def upload_file(file: UploadFile=File(...), db: Session = Depends(get_db))
             filename=processed_filename,
             url=url,
             category=ai_result["category"],
-            color=ai_result["color"]
+            subcategory=ai_result['subcategory'],
+            color_base=ai_result["color_base"],
+            formality=ai_result['formality'],
+            season=ai_result['season'],
+            labels_json=json.dumps(ai_result.get("labels_json")) 
         )
         db.add(clothing_item)
         db.commit()
